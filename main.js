@@ -191,7 +191,7 @@ class DiceBot {
 	async sendHelp(message) {
 		await message.reply(`## AutoDice Help
 
-		Visit [the website](<https://automod.vale.rocks/BLANK>) for more usage information and [the AutoMod server](https://stt.gg/automod) for help.
+		Visit [the website](<https://automod.vale.rocks/blog/introducing-autodice>) for more usage information and [the AutoMod server](https://stt.gg/automod) for help.
 
 		- **Basic Rolls:** Use \`@AutoDice [number]d[sides]\`. (eg \`@AutoDice 10d6\`).
 		- **Math:** Supports \`+\`, \`-\`, \`*\`, \`/\`. Add modifiers like \`1d20 + 5\`.
