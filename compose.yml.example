@@ -1,0 +1,6 @@
+services:
+  bot:
+    build: .
+    container_name: autodice-bot
+    restart: always
+    env_file: .env
