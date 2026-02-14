@@ -49,6 +49,10 @@ class DiceBot {
 		content = content.slice(botMention.length).trim();
 		if (!content) return;
 
+		if (content.includes(".")) {
+			return await message.reply("⚠️ **Invalid Input:** Decimals are not supported. Please use whole numbers only.");
+		}
+
 		const args = content.split(/\s+/);
 		const trigger = args[0].toLowerCase();
 
@@ -77,9 +81,9 @@ class DiceBot {
 		let output = "";
 
 		if (repeatMatch) {
-			const count = Math.min(parseInt(repeatMatch[1]), 20);
+			const count = parseInt(repeatMatch[1]);
 			const formula = repeatMatch[2];
-			output += `**Repeating ${count} times:** \`${formula}\`\n`;
+			output += `🎲 **Repeating ${count} times:** \`${formula}\`\n`;
 			for (let i = 0; i < count; i++) {
 				const res = this.calculateDice(formula);
 				output += `${i + 1}. **${res.total}** \t${res.breakdown}\n`;
@@ -87,6 +91,10 @@ class DiceBot {
 		} else {
 			const res = this.calculateDice(input);
 			output = `🎲 **${res.total}**\n${res.breakdown}`;
+		}
+
+		if (output.length > (parseInt(process.env.STOAT_MAX_CHARS) || 2000)) {
+			output = `⚠️ **Error:** The result is too long (${output.length} characters) to be sent.`;
 		}
 
 		if (isPrivate) {
@@ -103,7 +111,7 @@ class DiceBot {
 	}
 
 	isDiceString(str) {
-		return /[0-9d]/.test(str) && /^[0-9d+\-*/().<>krlsha\s!]+$/i.test(str);
+		return /[0-9d]/.test(str) && /^[0-9d+\-*/()<>krlsha\s!]+$/i.test(str);
 	}
 
 	calculateDice(expression) {
@@ -111,8 +119,14 @@ class DiceBot {
 		const rolls = [];
 
 		const evalString = expression.replace(diceRegex, (match, countStr, sidesStr, mods) => {
-			const count = Math.min(parseInt(countStr || "1"), 100);
-			const sides = Math.min(parseInt(sidesStr), 1000);
+			const count = parseInt(countStr || "1");
+			const sides = parseInt(sidesStr);
+
+			if (sides <= 0 || count <= 0) {
+				rolls.push(`${match} (0)`);
+				return `(0)`;
+			}
+
 			const isExploding = mods && mods.includes("!");
 
 			let results = [];
@@ -191,16 +205,16 @@ class DiceBot {
 	async sendHelp(message) {
 		await message.reply(`## AutoDice Help
 
-		Visit [the website](<https://automod.vale.rocks/blog/introducing-autodice>) for more usage information and [the AutoMod server](https://stt.gg/automod) for help.
+Visit [the website](<https://automod.vale.rocks/blog/introducing-autodice>) for more usage information and [the AutoMod server](https://stt.gg/automod) for help.
 
-		- **Basic Rolls:** Use \`@AutoDice [number]d[sides]\`. (eg \`@AutoDice 10d6\`).
-		- **Math:** Supports \`+\`, \`-\`, \`*\`, \`/\`. Add modifiers like \`1d20 + 5\`.
-		- **Sorting:** Suffix \`sa\` (ascending) or \`sd\` (descending). (eg \`10d6sd\`).
-		- **Keep/Drop:** Use \`kh[n]\` to keep highest or \`kl[n]\` to keep lowest. (eg \`2d20kh1\` for Advantage).
-		- **Rerolls:** Use \`r<[n]\` or \`r>[n]\` to automatically reroll specific values. (eg \`1d10r<3\`).
-		- **Exploding Dice:** Suffix \`!\` to reroll and add any maximum results (eg \`4d6!\`).
-		- **Successes:** Suffix \`>[n]\` to count how many dice hit a target (eg \`5d10>7\`).
-		- **Private Rolls:** Prefix with \`private\` to receive results in your DMs.
+- **Basic Rolls:** Use \`@AutoDice [number]d[sides]\`. (eg \`@AutoDice 10d6\`).
+- **Math:** Supports \`+\`, \`-\`, \`*\`, \`/\`. Add modifiers like \`1d20 + 5\`.
+- **Sorting:** Suffix \`sa\` (ascending) or \`sd\` (descending). (eg \`10d6sd\`).
+- **Keep/Drop:** Use \`kh[n]\` to keep highest or \`kl[n]\` to keep lowest. (eg \`2d20kh1\` for Advantage).
+- **Rerolls:** Use \`r<[n]\` or \`r>[n]\` to automatically reroll specific values. (eg \`1d10r<3\`).
+- **Exploding Dice:** Suffix \`!\` to reroll and add any maximum results (eg \`4d6!\`).
+- **Successes:** Suffix \`>[n]\` to count how many dice hit a target (eg \`5d10>7\`).
+- **Private Rolls:** Prefix with \`private\` to receive results in your DMs.
 		`);
 	}
 
