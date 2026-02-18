@@ -13,7 +13,7 @@ Dice bot for Stoat
 </div>
 <br/>
 
-Dice bot perfect for role-playing, and especially tabletap RPGs (TTRPGs) such as Dungeons & Dragons (D&D).
+Dice bot perfect for role-playing, and especially tabletop RPGs (TTRPGs) such as Dungeons & Dragons (D&D).
 
 ## Documentation and Support
 
