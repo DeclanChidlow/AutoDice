@@ -7,9 +7,6 @@
 		"start": "bun main.js",
 		"dev": "bun main.js"
 	},
-	"dependencies": {
-		"stoat.js": "^7.3.6"
-	},
 	"keywords": [
 		"stoat",
 		"dice",
