@@ -1,5 +1,11 @@
 const { Client } = require("stoat.js");
 
+const VERBOSE = process.env.VERBOSE_LOGGING === "true" || process.env.VERBOSE_LOGGING === "1";
+
+function verboseLog(...args) {
+	if (VERBOSE) console.log(...args);
+}
+
 class DiceBot {
 	constructor() {
 		this.client = new Client();
@@ -7,8 +13,16 @@ class DiceBot {
 	}
 
 	setupEvents() {
-		this.client.on("connect", () => {
+		this.client.on("connected", () => {
 			console.log(`AutoDice connected as ${this.client.user?.username}`);
+		});
+
+		this.client.on("ready", () => {
+			console.log(`AutoDice ready as ${this.client.user?.username} (${this.client.user?.id})`);
+		});
+
+		this.client.on("disconnected", () => {
+			console.log("AutoDice disconnected, will auto-reconnect...");
 		});
 
 		this.client.on("error", (err) => {
@@ -38,6 +52,38 @@ class DiceBot {
 		}
 	}
 
+	async handlePing(message) {
+		const now = Date.now();
+
+		const wsPing = this.client.events.ping();
+		const wsDisplay = wsPing === null || wsPing < 0 ? "`Reconnecting/Syncing…`" : `\`${wsPing}ms\``;
+
+		const uptime = process.uptime();
+		const d = Math.floor(uptime / 86400);
+		const h = Math.floor((uptime % 86400) / 3600);
+		const m = Math.floor((uptime % 3600) / 60);
+		const s = Math.floor(uptime % 60);
+
+		let uptimeStr = "";
+		if (d > 0) uptimeStr += `${d}d `;
+		if (h > 0) uptimeStr += `${h}h `;
+		if (m > 0) uptimeStr += `${m}m `;
+		if (uptime < 300) uptimeStr += `${s}s`;
+
+		try {
+			const msg = await message.reply("⌛ Measuring...");
+
+			if (msg) {
+				const messagePing = Math.round(Date.now() - now);
+				const content = ["## Ping Pong!", `WebSocket: ${wsDisplay}`, `Message: \`${messagePing}ms\``, `Uptime: \`${uptimeStr.trim() || "0s"}\``].join("\n");
+
+				await msg.edit({ content });
+			}
+		} catch (error) {
+			console.error("Ping error:", error);
+		}
+	}
+
 	async handleMessage(message) {
 		if (message.author?.bot || !message.content) return;
 
@@ -47,7 +93,9 @@ class DiceBot {
 		if (!content.startsWith(botMention)) return;
 
 		content = content.slice(botMention.length).trim();
-		if (!content) return;
+		if (!content) {
+			return await this.sendHelp(message);
+		}
 
 		if (content.includes(".")) {
 			return await message.reply("⚠️ **Invalid Input:** Decimals are not supported. Please use whole numbers only.");
@@ -62,6 +110,10 @@ class DiceBot {
 
 		if (trigger === "support") {
 			return await this.sendSupport(message);
+		}
+
+		if (trigger === "ping") {
+			return await this.handlePing(message);
 		}
 
 		let isDMRequest = false;
